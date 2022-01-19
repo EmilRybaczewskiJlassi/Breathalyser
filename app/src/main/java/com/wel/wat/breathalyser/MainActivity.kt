@@ -2,13 +2,23 @@ package com.wel.wat.breathalyser
 
 import android.annotation.SuppressLint
 import android.graphics.Color
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProvider
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.wel.wat.breathalyser.database.Measurement
+import com.wel.wat.breathalyser.database.MeasurementViewModel
 
 class MainActivity : AppCompatActivity() {
+
+    private lateinit var measurementViewModel: MeasurementViewModel
+
     var sexValue: Double = 0.7
     var weightValue: Double = 0.0
     var alcoholValue: Double = 0.0
@@ -23,10 +33,10 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        measurementViewModel = ViewModelProvider(this).get(MeasurementViewModel::class.java)
         val alcoholButton: Button = findViewById(R.id.add_alcohol)
         val measurementButton: Button = findViewById(R.id.new_measurement)
         val infoButton: ImageView = findViewById(R.id.info)
-
 
         alcoholButton.setOnClickListener {
             val weightEdit: EditText = findViewById(R.id.weight)
@@ -50,6 +60,8 @@ class MainActivity : AppCompatActivity() {
                     addAlcohol()
                     sober()
                     changeColor()
+                    insertDataToDatabase()
+                    recycleMeasure()
                 }
             }
 
@@ -57,6 +69,7 @@ class MainActivity : AppCompatActivity() {
 
         measurementButton.setOnClickListener {
             newMeasurement()
+            deleteAll()
         }
 
         infoButton.setOnClickListener {
@@ -65,32 +78,58 @@ class MainActivity : AppCompatActivity() {
 
     }
 
+    private fun deleteAll() {
+        measurementViewModel.deleteAllData()
+        Toast.makeText(applicationContext,"Starting new measurement",Toast.LENGTH_SHORT).show()
+    }
+
+    private fun recycleMeasure() {
+        val adapter = ListAdapter()
+        val recyclerView: RecyclerView = findViewById(R.id.recycler)
+        recyclerView.adapter = adapter
+        recyclerView.layoutManager = LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false)
+
+
+        measurementViewModel.readAllData.observe(this, Observer { measurement ->
+            adapter.setData(measurement)
+        })
+    }
+
+    private fun insertDataToDatabase() {
+        val alcoholMl = millilitersValue
+        val alcoholPr = percentageValue
+        val percent = percentage
+
+        val measurement = Measurement(0, alcoholMl, alcoholPr, percent)
+        measurementViewModel.addMeasurement(measurement)
+    }
+
     private fun symptoms() {
         val alert = AlertDialog.Builder(this)
         alert.setTitle("Common symptoms")
         when {
             percentage<=0.3 -> {
-                alert.setMessage("started")
+                alert.setMessage("distracted attention")
                 alert.show()
             }
             percentage<=0.8 -> {
-                alert.setMessage("ppppppp")
+                alert.setMessage("excitability, impaired eye-hand coordination, decreased criticism ")
                 alert.show()
             }
             percentage<=1.5 -> {
-                alert.setMessage("ogczman")
+                alert.setMessage("balance disorders, errors in logical thinking, delayed reaction time, aggressiveness, bravado ")
                 alert.show()
             }
             percentage<=2.0 -> {
-                alert.setMessage("have fun")
+                alert.setMessage("speech disorders, drowsiness, decreased control of behavior and movement ")
                 alert.show()
             }
             percentage<=4.0 -> {
-                alert.setMessage("chill bro")
+                alert.setMessage("drowsiness, possibility of falling into a coma")
                 alert.show()
             }
             percentage>=4.1 -> {
-                alert.setMessage("death")
+                alert.setMessage("poisoning, death ")
                 alert.show()
             }
         }
