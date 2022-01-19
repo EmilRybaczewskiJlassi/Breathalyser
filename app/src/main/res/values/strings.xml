@@ -11,4 +11,6 @@
     <string name="alcohol_in_ml">alcohol in ml</string>
     <string name="procentage">procentage</string>
     <string name="bla">‰</string>
+    <string name="new_measurement">New measurement</string>
+    <string name="add_alcohol">add alcohol</string>
 </resources>
